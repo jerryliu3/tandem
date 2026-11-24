@@ -51,18 +51,58 @@ function depreciationFor(p: RentalProperty, year: number): number {
   return annual
 }
 
+export interface RentalExpenseBreakdown {
+  /** Owner's share, CAD per year. */
+  grossRent: number
+  condoFees: number
+  propertyTax: number
+  insurance: number
+  maintenance: number
+  management: number
+  total: number
+}
+
+export function rentalExpenses(p: RentalProperty, inflationFactor: number): RentalExpenseBreakdown {
+  const share = p.ownershipPct / 100
+  const k = inflationFactor * share
+  const grossRent = p.monthlyRent * 12 * (1 - p.vacancyPct / 100) * k
+  const condoFees = p.condoFeesMonthly * 12 * k
+  const propertyTax = p.propertyTaxAnnual * k
+  const insurance = p.insuranceAnnual * k
+  const maintenance = p.maintenanceAnnual * k
+  const management = (p.managementPct / 100) * grossRent
+  return { grossRent, condoFees, propertyTax, insurance, maintenance, management, total: condoFees + propertyTax + insurance + maintenance + management }
+}
+
+export interface PropertyTimelinePoint {
+  year: number
+  /** Whole-property CAD values at the start of the year. */
+  value: number
+  balance: number
+  /** Owner's share of value − balance. */
+  equity: number
+}
+
+export function propertyTimeline(p: RentalProperty, startYear: number, years: number): PropertyTimelinePoint[] {
+  const share = p.ownershipPct / 100
+  const out: PropertyTimelinePoint[] = []
+  let value = p.marketValue
+  let balance = p.mortgage.balance
+  for (let t = 0; t <= years; t++) {
+    out.push({ year: startYear + t, value, balance, equity: (value - balance) * share })
+    value *= 1 + p.appreciationPct / 100
+    balance = amortizeMonths(balance, p.mortgage.annualRatePct, p.mortgage.compounding, p.mortgage.monthlyPayment, 12).endBalance
+  }
+  return out
+}
+
 export function computeRentalYear(p: RentalProperty, o: RentalYearOptions): RentalYear {
   const share = p.ownershipPct / 100
-  const infl = o.inflationFactor
-
-  const fullRent = p.monthlyRent * 12 * (1 - p.vacancyPct / 100) * infl
-  const fullExpenses =
-    (p.condoFeesMonthly * 12 + p.propertyTaxAnnual + p.insuranceAnnual + p.maintenanceAnnual) * infl +
-    (p.managementPct / 100) * fullRent
+  const breakdown = rentalExpenses(p, o.inflationFactor)
   const am = amortizeMonths(o.balanceStart, p.mortgage.annualRatePct, p.mortgage.compounding, p.mortgage.monthlyPayment, 12)
 
-  const grossRent = fullRent * share
-  const expenses = fullExpenses * share
+  const grossRent = breakdown.grossRent
+  const expenses = breakdown.total
   const interest = am.interest * share
   const principal = am.principal * share
   const mortgagePaid = am.paid * share

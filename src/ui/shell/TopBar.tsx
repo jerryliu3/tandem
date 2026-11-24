@@ -56,10 +56,10 @@ export function TopBar() {
             ]}
           />
           <div className="flex items-center rounded-xl border border-line bg-surface p-0.5">
-            <button type="button" onClick={undo} disabled={!canUndo} title="Undo (⌘Z)" className="rounded-[10px] p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-ink disabled:opacity-30">
+            <button type="button" onClick={undo} disabled={!canUndo} title="Undo (⌘Z)" aria-label="Undo" className="rounded-[10px] p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-ink disabled:opacity-30">
               <Undo2 size={16} />
             </button>
-            <button type="button" onClick={redo} disabled={!canRedo} title="Redo (⇧⌘Z)" className="rounded-[10px] p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-ink disabled:opacity-30">
+            <button type="button" onClick={redo} disabled={!canRedo} title="Redo (⇧⌘Z)" aria-label="Redo" className="rounded-[10px] p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-ink disabled:opacity-30">
               <Redo2 size={16} />
             </button>
           </div>

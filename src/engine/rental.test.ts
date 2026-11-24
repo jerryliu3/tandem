@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDefaultPlan } from '../model/defaults'
 import { amortizeMonths, monthlyRate } from './mortgage'
-import { computeRentalYear, passiveAllowance } from './rental'
+import { computeRentalYear, passiveAllowance, propertyTimeline, rentalExpenses } from './rental'
 import { canadaFederalTax, partXIIITax, section216Tax } from './tax/canada'
 import { getTables } from './tax/tables'
 
@@ -77,6 +77,22 @@ describe('rental year (default condo)', () => {
   it('computes cash flow after the full mortgage payment and Canadian tax', () => {
     expect(y.cashFlowBeforeUsTaxUsd).toBeCloseTo((28200 - 9764 - 30000 - y.canadaTax) / 1.4, 6)
     expect(y.principalUsd).toBeCloseTo(y.principal / 1.4, 6)
+  })
+
+  it('itemizes operating expenses so they sum to the total', () => {
+    const b = rentalExpenses(condo, 1.1)
+    expect(b.grossRent).toBeCloseTo(28200 * 1.1, 6)
+    expect(b.condoFees + b.propertyTax + b.insurance + b.maintenance + b.management).toBeCloseTo(b.total, 9)
+    expect(b.total).toBeCloseTo(9764 * 1.1, 6)
+  })
+
+  it('projects value, balance and equity year by year', () => {
+    const tl = propertyTimeline(condo, 2027, 3)
+    expect(tl).toHaveLength(4)
+    expect(tl[0]).toMatchObject({ year: 2027, value: condo.marketValue, balance: condo.mortgage.balance })
+    expect(tl[1].value).toBeCloseTo(condo.marketValue * (1 + condo.appreciationPct / 100), 6)
+    expect(tl[1].balance).toBeCloseTo(amortizeMonths(condo.mortgage.balance, condo.mortgage.annualRatePct, condo.mortgage.compounding, condo.mortgage.monthlyPayment, 12).endBalance, 6)
+    expect(tl[3].equity).toBeGreaterThan(tl[0].equity)
   })
 
   it('scales by ownership share', () => {

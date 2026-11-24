@@ -190,6 +190,7 @@ export function MoneyField({
   max,
   step = 100,
   placeholder,
+  showCurrency,
 }: {
   label: ReactNode
   hint?: ReactNode
@@ -197,6 +198,8 @@ export function MoneyField({
   onChange: (v: number) => void
   currency?: Currency
   onCurrencyChange?: (c: Currency) => void
+  /** Defaults to showing the pill for CAD or when the currency is switchable. */
+  showCurrency?: boolean
   suffix?: string
   decimals?: number
   min?: number
@@ -207,7 +210,7 @@ export function MoneyField({
   return (
     <Field label={label} hint={hint}>
       <EditableNumber value={value} onChange={onChange} prefix={CURRENCY_PREFIX[currency]} suffix={suffix} decimals={decimals} min={min} max={max} step={step} placeholder={placeholder} ariaLabel={typeof label === 'string' ? label : undefined} />
-      {(onCurrencyChange || currency === 'CAD') && <CurrencyPill value={currency} onChange={onCurrencyChange} />}
+      {(showCurrency ?? (onCurrencyChange || currency === 'CAD')) && <CurrencyPill value={currency} onChange={onCurrencyChange} />}
     </Field>
   )
 }
