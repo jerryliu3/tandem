@@ -10,11 +10,12 @@ const accounts = [
 describe('accountsUrl', () => {
   it('points at balances only and keeps the access path', () => {
     expect(accountsUrl('https://user:pass@bridge.simplefin.org/simplefin/')).toBe(
-      'https://user:pass@bridge.simplefin.org/simplefin/accounts?balances-only=1',
+      'https://bridge.simplefin.org/simplefin/accounts?balances-only=1',
     )
     expect(accountsUrl('https://user:pass@bridge.simplefin.org/simplefin/accounts')).toBe(
-      'https://user:pass@bridge.simplefin.org/simplefin/accounts?balances-only=1',
+      'https://bridge.simplefin.org/simplefin/accounts?balances-only=1',
     )
+    expect(accountsUrl('https://user:pass@bridge.simplefin.org/simplefin/')).not.toContain('user')
   })
 
   it('refuses a request before calling SimpleFIN when the token or server is missing', async () => {
