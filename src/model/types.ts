@@ -4,6 +4,16 @@ export type PersonId = 'jerry' | 'sophia'
 export type Scope = PersonId | 'household'
 export type ThemeId = 'midnight' | 'aurora' | 'dusk' | 'daylight'
 export type PlanYear = 2026 | 2027
+export type PageId = 'overview' | 'income' | 'budget' | 'accounts' | 'property' | 'goal' | 'settings'
+
+export interface Insight {
+  id: string
+  severity: 'positive' | 'info' | 'warn' | 'critical'
+  title: string
+  detail: string
+  personId?: PersonId
+  page?: PageId
+}
 
 export type CategoryId =
   | 'housing'
