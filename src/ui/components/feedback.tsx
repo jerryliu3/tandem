@@ -50,7 +50,7 @@ export function filterInsights(insights: Insight[], scope: Scope): Insight[] {
   return scope === 'household' ? insights : insights.filter((i) => !i.personId || i.personId === scope)
 }
 
-export function InsightList({ insights, limit, empty = 'Nothing needs attention.' }: { insights: Insight[]; limit?: number; empty?: ReactNode }) {
+export function InsightList({ insights, limit, clamp, empty = 'Nothing needs attention.' }: { insights: Insight[]; limit?: number; clamp?: boolean; empty?: ReactNode }) {
   const setPage = useUiStore((s) => s.setPage)
   const shown = limit ? insights.slice(0, limit) : insights
   if (shown.length === 0) return <p className="text-sm text-faint">{empty}</p>
@@ -71,7 +71,9 @@ export function InsightList({ insights, limit, empty = 'Nothing needs attention.
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm leading-snug font-medium text-ink">{i.title}</span>
-                <span className="mt-0.5 block text-xs leading-relaxed text-muted">{i.detail}</span>
+                <span className={cn('mt-0.5 text-xs leading-relaxed text-muted', clamp ? 'line-clamp-2' : 'block')} title={clamp ? i.detail : undefined}>
+                  {i.detail}
+                </span>
               </span>
               {i.page && <ArrowUpRight size={14} className="mt-1 shrink-0 text-faint opacity-0 transition-opacity group-hover:opacity-100" />}
             </button>

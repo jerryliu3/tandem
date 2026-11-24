@@ -29,6 +29,7 @@ export function EditableNumber({
   ariaLabel,
   size = 'md',
   placeholder,
+  grouping = true,
 }: {
   value: number | null
   onChange: (v: number) => void
@@ -42,6 +43,8 @@ export function EditableNumber({
   ariaLabel?: string
   size?: 'sm' | 'md' | 'lg'
   placeholder?: string
+  /** Thousands separators (off for years). */
+  grouping?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -113,7 +116,7 @@ export function EditableNumber({
       ) : (
         <>
           {prefix && <span className="mr-0.5 text-muted">{prefix}</span>}
-          <span className="border-b border-dashed border-transparent group-hover:border-faint">{formatNumber(value, decimals)}</span>
+          <span className="border-b border-dashed border-transparent group-hover:border-faint">{grouping ? formatNumber(value, decimals) : value.toFixed(decimals)}</span>
           {suffix && <span className="ml-0.5 text-muted">{suffix}</span>}
         </>
       )}
@@ -220,6 +223,7 @@ export function NumberField({
   min,
   max,
   step = 1,
+  grouping,
 }: {
   label: ReactNode
   hint?: ReactNode
@@ -231,10 +235,11 @@ export function NumberField({
   min?: number
   max?: number
   step?: number
+  grouping?: boolean
 }) {
   return (
     <Field label={label} hint={hint}>
-      <EditableNumber value={value} onChange={onChange} suffix={suffix} prefix={prefix} decimals={decimals} min={min} max={max} step={step} ariaLabel={typeof label === 'string' ? label : undefined} />
+      <EditableNumber value={value} onChange={onChange} suffix={suffix} prefix={prefix} decimals={decimals} min={min} max={max} step={step} grouping={grouping} ariaLabel={typeof label === 'string' ? label : undefined} />
     </Field>
   )
 }

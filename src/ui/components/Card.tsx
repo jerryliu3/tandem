@@ -19,7 +19,7 @@ export function Card({
   bodyClassName?: string
 }) {
   return (
-    <section className={cn('glass rounded-2xl', className)}>
+    <section className={cn('glass flex flex-col rounded-2xl', className)}>
       {(title || action) && (
         <header className="flex items-start justify-between gap-3 px-5 pt-4">
           <div className="min-w-0">
@@ -29,7 +29,7 @@ export function Card({
           {action && <div className="shrink-0">{action}</div>}
         </header>
       )}
-      <div className={cn('p-5', Boolean(title || action) && 'pt-3', bodyClassName)}>{children}</div>
+      <div className={cn('min-h-0 flex-1 p-5', Boolean(title || action) && 'pt-3', bodyClassName)}>{children}</div>
     </section>
   )
 }
