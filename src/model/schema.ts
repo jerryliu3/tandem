@@ -41,10 +41,16 @@ export function migratePlan(raw: unknown): Plan {
     const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
     months[k] = { jerry: num(m.jerry), sophia: num(m.sophia), shared: num(m.shared) }
   }
+  const bankLinks: Plan['actuals']['bankLinks'] = {}
+  for (const [id, link] of Object.entries(isRecord(plan.actuals.bankLinks) ? plan.actuals.bankLinks : {})) {
+    if (!isRecord(link)) continue
+    bankLinks[id] = { accountId: typeof link.accountId === 'string' && link.accountId ? link.accountId : null }
+  }
   plan.actuals = {
     months,
     snapshots: plan.actuals.snapshots.filter((s) => isRecord(s) && typeof s.date === 'string' && isRecord(s.balances)),
     baseline: isRecord(plan.actuals.baseline) && isRecord(plan.actuals.baseline.invested) ? plan.actuals.baseline : null,
+    bankLinks,
   }
   plan.schemaVersion = SCHEMA_VERSION
   return plan

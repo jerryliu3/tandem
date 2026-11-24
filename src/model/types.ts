@@ -41,10 +41,17 @@ export interface Baseline {
   invested: Record<Scope, number[]>
 }
 
+/** A SimpleFIN account mapped onto a Tandem account. `accountId` null means "don't sync". */
+export interface BankLink {
+  accountId: string | null
+}
+
 export interface Actuals {
   months: Record<MonthKey, MonthCheckIn>
   snapshots: BalanceSnapshot[]
   baseline: Baseline | null
+  /** SimpleFIN account id → link. Missing id means it has never been chosen. */
+  bankLinks: Record<string, BankLink>
 }
 
 export type CategoryId =

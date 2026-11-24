@@ -149,6 +149,6 @@ export function createDefaultPlan(): Plan {
       'goal',
       'accounts.balances',
     ],
-    actuals: { months: {}, snapshots: [], baseline: null },
+    actuals: { months: {}, snapshots: [], baseline: null, bankLinks: {} },
   }
 }

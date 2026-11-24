@@ -1,8 +1,9 @@
 import { produce } from 'immer'
-import { History, Plus, RotateCcw, Trash2, Wallet } from 'lucide-react'
+import { History, Plus, RefreshCw, RotateCcw, Trash2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { addMonths, createBaseline, hasCheckIn, monthActual } from '../../engine/actuals'
+import { matchedBalances, type RemoteBalance } from '../../engine/bankSync'
 import { projectPlan } from '../../engine/projection'
 import type { Plan } from '../../model/types'
 import { usePlanStore } from '../../store/planStore'
@@ -13,9 +14,9 @@ import { Card } from '../components/Card'
 import { AXIS_PROPS, ChartTooltip, GRID_PROPS } from '../components/charts'
 import { CheckInInput, monthLabel, snapshotTotal } from '../components/checkin'
 import { EmptyState } from '../components/feedback'
-import { Button, CURRENCY_PREFIX, CurrencyPill, EditableNumber } from '../components/inputs'
+import { Button, CURRENCY_PREFIX, CurrencyPill, EditableNumber, SelectMenu } from '../components/inputs'
 import { ConfirmDialog, Drawer } from '../components/overlays'
-import { useMoney } from '../format'
+import { formatCurrency, useMoney } from '../format'
 
 const newId = () => Math.random().toString(36).slice(2, 9)
 const todayIso = () => {
@@ -128,18 +129,76 @@ function saveBalances(plan: Plan, date: string, balances: Record<string, number>
   })
 }
 
+const SYNC_SECRET_KEY = 'tandem.syncSecret'
+
+/** Bank fills win. Hand edits to accounts the bank is not updating are kept. */
+function overlayDraft(base: Record<string, number>, draft: Record<string, number>, balances: Record<string, number>): Record<string, number> {
+  const next = { ...base }
+  for (const id of Object.keys(draft)) if (!(id in balances) && draft[id] !== base[id]) next[id] = draft[id]
+  return { ...next, ...balances }
+}
+
 function BalancesDrawer() {
   const plan = usePlan()
+  const update = usePlanStore((s) => s.update)
   const open = useUiStore((s) => s.balancesOpen)
   const setOpen = useUiStore((s) => s.setBalancesOpen)
   const [draft, setDraft] = useState<Record<string, number>>({})
+  const [base, setBase] = useState<Record<string, number>>({})
   const [date, setDate] = useState(todayIso)
   const [wasOpen, setWasOpen] = useState(false)
+  const [secret, setSecret] = useState(() => localStorage.getItem(SYNC_SECRET_KEY) ?? '')
+  const [remote, setRemote] = useState<RemoteBalance[] | null>(null)
+  const [notices, setNotices] = useState<string[]>([])
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open) {
-      setDraft(Object.fromEntries(plan.accounts.map((a) => [a.id, a.balance])))
+      const starting = Object.fromEntries(plan.accounts.map((a) => [a.id, a.balance]))
+      setBase(starting)
+      setDraft(starting)
       setDate(todayIso())
+      setRemote(null)
+      setNotices([])
+      setSyncError(null)
+    }
+  }
+
+  const applyRemote = (list: RemoteBalance[], warnings: string[]) => {
+    const { balances, notices: problems } = matchedBalances(plan.accounts, plan.actuals.bankLinks, list)
+    setDraft((d) => overlayDraft(base, d, balances))
+    setNotices([...warnings, ...problems])
+    const latest = Math.max(0, ...list.map((a) => a.balanceDate ?? 0))
+    if (latest > 0) {
+      const iso = new Date(latest * 1000).toISOString().slice(0, 10)
+      if (iso <= todayIso()) setDate(iso)
+    }
+  }
+
+  const fetchBalances = async () => {
+    setSyncing(true)
+    setSyncError(null)
+    try {
+      const res = await fetch('/api/balances', { headers: { Authorization: `Bearer ${secret.trim()}` } })
+      const body = (await res.json().catch(() => null)) as { accounts?: RemoteBalance[]; warnings?: string[]; error?: string } | null
+      if (!res.ok || !body?.accounts) throw new Error(body?.error ?? 'Could not fetch balances.')
+      setRemote(body.accounts)
+      applyRemote(body.accounts, body.warnings ?? [])
+    } catch (e) {
+      setSyncError(e instanceof Error ? e.message : 'Could not fetch balances.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const setLink = (simplefinId: string, accountId: string | null) => {
+    const links = { ...plan.actuals.bankLinks, [simplefinId]: { accountId } }
+    update((d) => void (d.actuals.bankLinks[simplefinId] = { accountId }))
+    if (remote) {
+      const { balances, notices: problems } = matchedBalances(plan.accounts, links, remote)
+      setDraft((d) => overlayDraft(base, d, balances))
+      setNotices(problems)
     }
   }
   return (
@@ -153,6 +212,64 @@ function BalancesDrawer() {
           onChange={(e) => e.target.value && setDate(e.target.value)}
           className="rounded-lg bg-surface-2 px-2 py-1 text-sm text-ink outline-none focus:ring-1 focus:ring-accent/50"
         />
+      </div>
+      <div className="mb-5 rounded-xl border border-line bg-surface/40 p-3">
+        <div className="text-xs font-semibold tracking-wide text-muted uppercase">From your bank</div>
+        <p className="mt-1 text-xs leading-relaxed text-faint">Fetches balances only. The sync token matches SYNC_SECRET on the server and stays in this browser.</p>
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="password"
+            value={secret}
+            autoComplete="off"
+            placeholder="Sync token"
+            aria-label="Sync token"
+            onChange={(e) => {
+              setSecret(e.target.value)
+              if (e.target.value.trim()) localStorage.setItem(SYNC_SECRET_KEY, e.target.value.trim())
+              else localStorage.removeItem(SYNC_SECRET_KEY)
+            }}
+            className="min-w-0 flex-1 rounded-lg bg-surface-2 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-accent/50"
+          />
+          <Button size="sm" variant="outline" disabled={!secret.trim() || syncing} onClick={() => void fetchBalances()}>
+            <RefreshCw size={13} className={syncing ? 'animate-spin' : undefined} /> {syncing ? 'Fetching' : 'Fetch balances'}
+          </Button>
+        </div>
+        {syncError && <p className="mt-2 text-xs text-negative">{syncError}</p>}
+        {notices.map((n) => (
+          <p key={n} className="mt-2 text-xs text-warning">
+            {n}
+          </p>
+        ))}
+        {remote && remote.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {remote.map((r) => {
+              const link = plan.actuals.bankLinks[r.id]
+              const value = link === undefined ? 'choose' : (link.accountId ?? 'skip')
+              return (
+                <div key={r.id} className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm text-ink">{r.name}</div>
+                    <div className="num text-[11px] text-faint">
+                      {r.org ? `${r.org} · ` : ''}
+                      {r.currency === 'USD' || r.currency === 'CAD' ? formatCurrency(r.balance, r.currency) : `${r.balance.toLocaleString('en-US')} ${r.currency}`}
+                    </div>
+                  </div>
+                  <SelectMenu
+                    value={value}
+                    onChange={(v) => v !== 'choose' && setLink(r.id, v === 'skip' ? null : v)}
+                    ariaLabel={`Where ${r.name} goes`}
+                    options={[
+                      { value: 'choose', label: 'Choose' },
+                      { value: 'skip', label: "Don't sync" },
+                      ...plan.accounts.map((a) => ({ value: a.id, label: a.name })),
+                    ]}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {remote && remote.length === 0 && <p className="mt-2 text-xs text-faint">SimpleFIN returned no accounts.</p>}
       </div>
       <div className="space-y-0.5">
         {plan.accounts.map((a) => (
