@@ -77,6 +77,26 @@ describe('usePlanStore', () => {
     expect((await repo.load())?.people[1].income.baseSalary).toBe(230000)
   })
 
+  it('clears a placeholder once the user edits that value', () => {
+    const has = (k: string) => usePlanStore.getState().plan.placeholders.includes(k)
+    expect(has('goal') && has('people.0.birthYear') && has('accounts.balances')).toBe(true)
+    usePlanStore.getState().update((d) => {
+      d.people[0].income.baseSalary = 120000
+    })
+    expect(has('goal') && has('people.0.birthYear')).toBe(true)
+    usePlanStore.getState().update((d) => {
+      d.goal.by = { mode: 'date', year: 2050, month: 1 }
+      d.people[0].birthYear = 1994
+    })
+    expect(has('goal')).toBe(false)
+    expect(has('people.0.birthYear')).toBe(false)
+    expect(has('people.1.birthYear')).toBe(true)
+    usePlanStore.getState().update((d) => {
+      d.accounts[0].balance = 5000
+    })
+    expect(has('accounts.balances')).toBe(false)
+  })
+
   it('replace() migrates imported plans', () => {
     usePlanStore.getState().replace({ nonsense: true })
     expect(usePlanStore.getState().plan.people).toHaveLength(2)

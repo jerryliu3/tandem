@@ -1,7 +1,9 @@
+import { produce } from 'immer'
 import { temporal } from 'zundo'
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { createDefaultPlan } from '../model/defaults'
+import { clearTouchedPlaceholders } from '../model/placeholders'
 import { migratePlan } from '../model/schema'
 import type { Plan } from '../model/types'
 import type { PlanRepository } from './repository'
@@ -38,13 +40,19 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 export const usePlanStore = create<PlanState>()(
   temporal(
-    immer((set) => ({
+    immer((set, get) => ({
       plan: createDefaultPlan(),
       hydrated: false,
-      update: (fn) =>
-        set((s) => {
-          fn(s.plan)
-        }),
+      update: (fn) => {
+        const prev = get().plan
+        let next = produce(prev, fn)
+        if (next === prev) return
+        if (next.placeholders.length > 0) {
+          const remaining = clearTouchedPlaceholders(prev, next)
+          if (remaining.length !== next.placeholders.length) next = { ...next, placeholders: remaining }
+        }
+        set({ plan: next })
+      },
       replace: (raw) => set({ plan: migratePlan(raw) }),
       reset: () => set({ plan: createDefaultPlan() }),
       hydrate: async (repo) => {

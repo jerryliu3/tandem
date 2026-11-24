@@ -72,6 +72,9 @@ export const selectGoal = memo((plan: Plan, w: GoalWhatIf): GoalView => {
   return { plan: eff, opts, projection, goal: solveGoal(eff, projection, opts), whatIfActive: active }
 })
 
+/** The goal under the saved plan, ignoring what-ifs (for "plan vs what-if" comparisons). */
+export const selectBaseGoal = memo((plan: Plan): GoalResult => solveGoal(plan, selectProjection(plan)))
+
 export const selectMonteCarlo = memo((plan: Plan, w: GoalWhatIf): MonteCarloResult => {
   const view = selectGoal(plan, w)
   return monteCarlo(view.plan, view.projection, { paths: 1000, seed: 42, returnShiftPct: view.opts.returnShiftPct })
@@ -93,6 +96,10 @@ export function useGoal(): GoalView {
   const plan = usePlan()
   const whatIf = useUiStore((s) => s.whatIf)
   return selectGoal(plan, whatIf)
+}
+
+export function useBaseGoal(): GoalResult {
+  return selectBaseGoal(usePlan())
 }
 
 export function useMonteCarlo(): MonteCarloResult {
