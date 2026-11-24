@@ -1,3 +1,4 @@
+import { TriangleAlert, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, type ReactNode } from 'react'
 import type { PageId } from './model/types'
@@ -35,6 +36,8 @@ export default function App() {
   const hydrated = usePlanStore((s) => s.hydrated)
   const theme = usePlanStore((s) => s.plan.settings.theme)
   const page = useUiStore((s) => s.page)
+  const notice = usePlanStore((s) => s.notice)
+  const dismissNotice = usePlanStore((s) => s.dismissNotice)
 
   useEffect(() => {
     void usePlanStore.getState().hydrate(repository)
@@ -73,6 +76,15 @@ export default function App() {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         <main className="mx-auto w-full max-w-[1400px] flex-1 px-8 pt-6 pb-20">
+          {notice && (
+            <div role="alert" className="glass mb-5 flex items-start gap-3 rounded-2xl border-warning/40 p-4 text-sm">
+              <TriangleAlert size={16} className="mt-0.5 shrink-0 text-warning" />
+              <p className="flex-1 text-muted">{notice}</p>
+              <button type="button" onClick={dismissNotice} className="rounded-lg p-1 text-faint hover:bg-surface-2 hover:text-ink" aria-label="Dismiss">
+                <X size={14} />
+              </button>
+            </div>
+          )}
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={page}

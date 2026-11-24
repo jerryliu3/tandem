@@ -11,6 +11,9 @@ import type { PlanRepository } from './repository'
 export interface PlanState {
   plan: Plan
   hydrated: boolean
+  /** A one-off message for the user (e.g. saved data couldn't be read). */
+  notice: string | null
+  dismissNotice: () => void
   update: (fn: (draft: Plan) => void) => void
   replace: (plan: unknown) => void
   reset: () => void
@@ -43,6 +46,8 @@ export const usePlanStore = create<PlanState>()(
     immer((set, get) => ({
       plan: createDefaultPlan(),
       hydrated: false,
+      notice: null,
+      dismissNotice: () => set({ notice: null }),
       update: (fn) => {
         const prev = get().plan
         let next = produce(prev, fn)
@@ -58,7 +63,7 @@ export const usePlanStore = create<PlanState>()(
       hydrate: async (repo) => {
         repository = repo
         const loaded = await repo.load()
-        set({ plan: loaded ?? createDefaultPlan(), hydrated: true })
+        set({ plan: loaded ?? createDefaultPlan(), hydrated: true, notice: repo.lastLoadError ?? null })
         resetHistory()
       },
     })),

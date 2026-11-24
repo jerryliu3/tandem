@@ -63,7 +63,11 @@ export function Sidebar() {
       </nav>
       <div className="mt-auto space-y-3">
         <GoalPill />
-        <p className="px-2 text-[11px] leading-relaxed text-faint">Saved in this browser. Export a backup from Settings.</p>
+        <p className="px-2 text-[11px] leading-relaxed text-faint">
+          Saved in this browser. Export a backup from Settings.
+          <br />
+          Planning estimates, not tax advice.
+        </p>
       </div>
     </aside>
   )

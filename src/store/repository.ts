@@ -5,6 +5,8 @@ import { migratePlan } from '../model/schema'
 export interface PlanRepository {
   load(): Promise<Plan | null>
   save(plan: Plan): Promise<void>
+  /** Set when the last load found data it couldn't read (and so returned null). */
+  readonly lastLoadError?: string | null
 }
 
 export const STORAGE_KEY = 'tandem.plan.v1'
@@ -18,14 +20,21 @@ export class LocalStorageRepository implements PlanRepository {
     this.key = key
   }
 
+  lastLoadError: string | null = null
+
   async load(): Promise<Plan | null> {
+    this.lastLoadError = null
     const raw = this.storage?.getItem(this.key)
     if (!raw) return null
     try {
       const parsed: unknown = JSON.parse(raw)
-      if (!parsed || typeof parsed !== 'object') return null
+      if (!parsed || typeof parsed !== 'object') throw new Error('not an object')
       return migratePlan(parsed)
     } catch {
+      // Keep the unreadable copy: the next autosave will overwrite the main key.
+      const backupKey = `${this.key}.unreadable`
+      this.storage?.setItem(backupKey, raw)
+      this.lastLoadError = `Your saved plan couldn’t be read, so Tandem started from the sheet defaults. The original data is kept in this browser’s localStorage under “${backupKey}”.`
       return null
     }
   }

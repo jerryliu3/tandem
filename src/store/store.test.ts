@@ -20,8 +20,21 @@ describe('LocalStorageRepository', () => {
     const storage = new MemoryStorage()
     const repo = new LocalStorageRepository(storage)
     expect(await repo.load()).toBeNull()
+    expect(repo.lastLoadError).toBeNull()
     storage.setItem(STORAGE_KEY, '{not json')
     expect(await repo.load()).toBeNull()
+    expect(repo.lastLoadError).toContain('couldn’t be read')
+    expect(storage.getItem(`${STORAGE_KEY}.unreadable`)).toBe('{not json')
+  })
+
+  it('surfaces an unreadable plan on hydrate without losing it', async () => {
+    const storage = new MemoryStorage()
+    storage.setItem(STORAGE_KEY, '42')
+    await usePlanStore.getState().hydrate(new LocalStorageRepository(storage))
+    expect(usePlanStore.getState().notice).toContain('unreadable')
+    expect(storage.getItem(`${STORAGE_KEY}.unreadable`)).toBe('42')
+    usePlanStore.getState().dismissNotice()
+    expect(usePlanStore.getState().notice).toBeNull()
   })
 })
 
