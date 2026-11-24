@@ -1,18 +1,10 @@
+import { PLACEHOLDERS } from '../model/placeholders'
 import type { Insight, PersonId, Plan } from '../model/types'
 import type { PlanResult } from './plan'
 
 const fmt = (x: number) => `$${Math.round(Math.abs(x)).toLocaleString('en-US')}`
 const cad = (x: number) => `C$${Math.round(Math.abs(x)).toLocaleString('en-US')}`
 const pct = (x: number) => `${Math.round(x)}%`
-
-const PLACEHOLDER_LABELS: Record<string, string> = {
-  'people.0.birthYear': "Jerry's birth year",
-  'people.1.birthYear': "Sophia's birth year",
-  'properties.0.us': 'condo purchase price, year and land share (US depreciation)',
-  'properties.0.mortgage.annualRatePct': 'condo mortgage interest rate',
-  goal: 'retirement goal amount and date',
-  'accounts.balances': 'current account balances',
-}
 
 export function buildInsights(plan: Plan, r: Omit<PlanResult, 'insights'>): Insight[] {
   const out: Insight[] = []
@@ -163,7 +155,7 @@ export function buildInsights(plan: Plan, r: Omit<PlanResult, 'insights'>): Insi
     }
   }
 
-  const missing = plan.placeholders.map((k) => PLACEHOLDER_LABELS[k]).filter(Boolean)
+  const missing = plan.placeholders.map((k) => PLACEHOLDERS[k]?.label).filter(Boolean)
   if (missing.length > 0) {
     out.push({
       id: 'placeholders',
