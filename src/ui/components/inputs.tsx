@@ -126,18 +126,28 @@ export function EditableNumber({
 
 export function EditableText({ value, onChange, className, placeholder = 'Untitled' }: { value: string; onChange: (v: string) => void; className?: string; placeholder?: string }) {
   const [draft, setDraft] = useState(value)
-  useEffect(() => setDraft(value), [value])
+  const [synced, setSynced] = useState(value)
+  const cancelled = useRef(false)
+  if (value !== synced) {
+    setSynced(value)
+    setDraft(value)
+  }
   return (
     <input
       value={draft}
       placeholder={placeholder}
       onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => draft.trim() !== value && onChange(draft.trim() || placeholder)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-        if (e.key === 'Escape') {
+      onBlur={() => {
+        if (cancelled.current) {
+          cancelled.current = false
           setDraft(value)
-          ;(e.target as HTMLInputElement).blur()
+        } else if (draft.trim() !== value) onChange(draft.trim() || placeholder)
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+        if (e.key === 'Escape') {
+          cancelled.current = true
+          e.currentTarget.blur()
         }
       }}
       className={cn('min-w-0 rounded-lg bg-transparent px-2 py-1 text-sm outline-none transition-colors hover:bg-surface-2 focus:bg-surface-2 focus:ring-1 focus:ring-accent/50', className)}

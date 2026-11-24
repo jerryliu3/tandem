@@ -46,14 +46,13 @@ function buildSteps(p: RentalProperty, rr: RentalResult, r: PlanResult, fx: numb
 }
 
 function Waterfall({ steps }: { steps: Step[] }) {
-  const net = steps.reduce((s, x) => s + x.value, 0)
+  const rows: (Step & { from: number; to: number })[] = []
   let run = 0
-  const rows = steps.map((s) => {
-    const from = run
+  for (const s of steps) {
+    rows.push({ ...s, from: run, to: run + s.value })
     run += s.value
-    return { ...s, from, to: run }
-  })
-  rows.push({ label: 'Net cash flow', value: net, kind: 'total', from: 0, to: net, hint: undefined })
+  }
+  rows.push({ label: 'Net cash flow', value: run, kind: 'total', from: 0, to: run })
   const points = rows.flatMap((x) => [x.from, x.to])
   const lo = Math.min(0, ...points)
   const hi = Math.max(0, ...points)
