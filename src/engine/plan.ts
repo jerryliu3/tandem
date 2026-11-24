@@ -15,6 +15,8 @@ export interface ComputeOptions {
   paidOffDebts?: Record<string, boolean>
   savingsRateOverridePct?: Partial<Record<PersonId, number>>
   extra?: { monthly: number; ownerId: PersonId | 'joint' }
+  /** Skip insight generation (projections call computePlan once per year). */
+  skipInsights?: boolean
 }
 
 export interface RentalResult extends RentalYear {
@@ -127,5 +129,5 @@ export function computePlan(plan: Plan, opts: ComputeOptions = {}): PlanResult {
   const autoAccounts = [...autoIds].map((id) => autoAccountFromId(id, plan)).filter((x): x is Account => x !== null)
 
   const partial = { year, yearIndex, tables, growthFactor, inflationFactor, people, rentals, budgets, savings, autoAccounts }
-  return { ...partial, insights: buildInsights(plan, partial) }
+  return { ...partial, insights: opts.skipInsights ? [] : buildInsights(plan, partial) }
 }
