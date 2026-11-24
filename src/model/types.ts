@@ -1,0 +1,208 @@
+export type Currency = 'USD' | 'CAD'
+export type Frequency = 'monthly' | 'yearly'
+export type PersonId = 'jerry' | 'sophia'
+export type Scope = PersonId | 'household'
+export type ThemeId = 'midnight' | 'aurora' | 'dusk' | 'daylight'
+export type PlanYear = 2026 | 2027
+
+export type CategoryId =
+  | 'housing'
+  | 'utilities'
+  | 'groceries'
+  | 'dining'
+  | 'transport'
+  | 'health'
+  | 'fitness'
+  | 'phone'
+  | 'entertainment'
+  | 'travel'
+  | 'gifts'
+  | 'debt'
+  | 'shopping'
+  | 'personal'
+  | 'insurance'
+  | 'other'
+
+export interface Expense {
+  id: string
+  name: string
+  category: CategoryId
+  amount: number
+  currency: Currency
+  frequency: Frequency
+}
+
+export interface TravelPlan {
+  trips: number
+  daysPerTrip: number
+  travelers: number
+  flightPerPerson: number
+  hotelPerNightPerPerson: number
+  activitiesPerTripPerPerson: number
+  diningPerDayPerPerson: number
+}
+
+export type SplitRule =
+  | { kind: 'even' }
+  | { kind: 'income' }
+  | { kind: 'custom'; jerryPct: number }
+
+export interface PersonIncome {
+  baseSalary: number
+  bonusPct: number
+  /** Send the after-tax bonus to savings instead of the monthly budget. */
+  bonusToSavings: boolean
+  rsuAnnualVest: number
+  /** ESPP payroll contribution as % of base salary. */
+  esppContribPct: number
+  esppDiscountPct: number
+  otherTaxableIncome: number
+}
+
+export interface PersonPayroll {
+  k401TraditionalPct: number
+  k401RothPct: number
+  k401AfterTaxPct: number
+  /** Employer matches matchPct% of employee deferrals, on deferrals up to matchUpToPct% of salary. */
+  matchPct: number
+  matchUpToPct: number
+  hsaAnnual: number
+  hsaEmployerAnnual: number
+  hsaCoverage: 'none' | 'self' | 'family'
+  preTaxPremiumsMonthly: number
+}
+
+export interface PersonIra {
+  annualContribution: number
+  kind: 'roth' | 'traditional'
+}
+
+export interface SavingsAllocation {
+  accountId: string
+  pct: number
+}
+
+export interface Person {
+  id: PersonId
+  name: string
+  birthYear: number
+  income: PersonIncome
+  payroll: PersonPayroll
+  ira: PersonIra
+  /** % of monthly take-home saved first ("pay yourself first"). */
+  savingsRatePct: number
+  /** Where take-home savings go after the IRA contribution. */
+  savingsAllocation: SavingsAllocation[]
+  expenses: Expense[]
+}
+
+export interface RentalProperty {
+  id: string
+  name: string
+  ownerId: PersonId
+  ownershipPct: number
+  currency: 'CAD'
+  marketValue: number
+  appreciationPct: number
+  mortgage: {
+    balance: number
+    annualRatePct: number
+    monthlyPayment: number
+    compounding: 'semi-annual' | 'monthly'
+  }
+  monthlyRent: number
+  vacancyPct: number
+  condoFeesMonthly: number
+  propertyTaxAnnual: number
+  insuranceAnnual: number
+  managementPct: number
+  maintenanceAnnual: number
+  canada: { nr6Elected: boolean }
+  us: {
+    purchasePrice: number
+    purchaseYear: number
+    landPct: number
+    /** CAD per USD at purchase, used for the USD depreciation basis. */
+    fxAtPurchase: number
+  }
+}
+
+export type AccountType =
+  | 'k401_traditional'
+  | 'k401_roth'
+  | 'ira_traditional'
+  | 'ira_roth'
+  | 'hsa'
+  | 'brokerage'
+  | 'cash'
+  | 'rrsp'
+  | 'tfsa'
+  | 'fhsa'
+
+export interface Account {
+  id: string
+  name: string
+  type: AccountType
+  ownerId: PersonId | 'joint'
+  balance: number
+  currency: Currency
+  expectedReturnPct?: number
+  /** Manual yearly contribution (Canadian accounts only). */
+  annualContribution?: number
+}
+
+export interface Debt {
+  id: string
+  name: string
+  ownerId: PersonId
+  /** null = balance unknown; payment treated as ongoing. */
+  balance: number | null
+  annualRatePct: number
+  monthlyPayment: number
+  currency: Currency
+}
+
+export interface Assumptions {
+  stockReturnPct: number
+  cashYieldPct: number
+  inflationPct: number
+  salaryGrowthPct: number
+  dividendYieldPct: number
+  returnVolatilityPct: number
+}
+
+export type GoalTarget =
+  | { mode: 'amount'; amount: number; dollars: 'today' | 'future' }
+  | { mode: 'spending'; annualSpendingToday: number; withdrawalRatePct: number }
+
+export type GoalBy =
+  | { mode: 'date'; year: number; month: number }
+  | { mode: 'age'; personId: PersonId; age: number }
+
+export interface RetirementGoal {
+  scope: Scope
+  target: GoalTarget
+  by: GoalBy
+  includeRealEstateEquity: boolean
+}
+
+export interface Settings {
+  planYear: PlanYear
+  displayCurrency: Currency
+  fxCadPerUsd: number
+  theme: ThemeId
+}
+
+export interface Plan {
+  schemaVersion: 1
+  settings: Settings
+  people: [Person, Person]
+  shared: { expenses: Expense[]; travel: TravelPlan; split: SplitRule }
+  properties: RentalProperty[]
+  accounts: Account[]
+  debts: Debt[]
+  assumptions: Assumptions
+  goal: RetirementGoal
+  /** Field paths still holding placeholder values (e.g. "people.0.birthYear"). */
+  placeholders: string[]
+}
