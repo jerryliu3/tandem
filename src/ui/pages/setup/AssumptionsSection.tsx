@@ -1,16 +1,16 @@
 import { Check, Download, RotateCcw, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { PLACEHOLDERS } from '../../model/placeholders'
-import type { Assumptions, PlanYear } from '../../model/types'
-import { usePlanStore } from '../../store/planStore'
-import { usePlan } from '../../store/selectors'
-import { useUiStore } from '../../store/uiStore'
-import { Card } from '../components/Card'
-import { Badge } from '../components/feedback'
-import { Button, EditableNumber, EditableText, Field, NumberField, Segmented } from '../components/inputs'
-import { ConfirmDialog } from '../components/overlays'
-import { cn } from '../cn'
-import { THEMES } from '../theme/themes'
+import { PLACEHOLDERS } from '../../../model/placeholders'
+import type { Assumptions, PlanYear } from '../../../model/types'
+import { usePlanStore } from '../../../store/planStore'
+import { usePlan } from '../../../store/selectors'
+import { useUiStore } from '../../../store/uiStore'
+import { Card } from '../../components/Card'
+import { Badge } from '../../components/feedback'
+import { Button, EditableNumber, EditableText, Field, NumberField, Segmented } from '../../components/inputs'
+import { ConfirmDialog } from '../../components/overlays'
+import { cn } from '../../cn'
+import { THEMES } from '../../theme/themes'
 
 const ASSUMPTIONS: { key: keyof Assumptions; label: string; hint: string; max: number; step: number }[] = [
   { key: 'stockReturnPct', label: 'Investment return', hint: 'yearly, before inflation', max: 20, step: 0.25 },
@@ -30,7 +30,7 @@ function download(filename: string, text: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function SettingsPage() {
+export function AssumptionsSection() {
   const plan = usePlan()
   const update = usePlanStore((s) => s.update)
   const replace = usePlanStore((s) => s.replace)
@@ -86,7 +86,7 @@ export function SettingsPage() {
                   </Button>
                 }
                 title="Reset the whole plan?"
-                description="Every input goes back to the values from your original spreadsheet. You can undo this right after."
+                description="Every setup input goes back to the values from your original spreadsheet. Monthly check-ins and balance updates are kept. You can undo this right after."
                 confirmLabel="Reset"
                 destructive
                 onConfirm={() => {
@@ -151,7 +151,7 @@ export function SettingsPage() {
                   <li key={key} className="flex items-center gap-2 border-b border-line py-2 text-sm last:border-0">
                     <span className="min-w-0 flex-1 first-letter:uppercase">{meta?.label ?? key}</span>
                     {meta && (
-                      <Button size="sm" variant="outline" onClick={() => setPage(meta.page)}>
+                      <Button size="sm" variant="outline" onClick={() => setPage('setup', meta.section)}>
                         Review
                       </Button>
                     )}

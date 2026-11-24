@@ -59,7 +59,7 @@ export const usePlanStore = create<PlanState>()(
         set({ plan: next })
       },
       replace: (raw) => set({ plan: migratePlan(raw) }),
-      reset: () => set({ plan: createDefaultPlan() }),
+      reset: () => set((s) => ({ plan: { ...createDefaultPlan(), actuals: s.plan.actuals } })),
       hydrate: async (repo) => {
         repository = repo
         const loaded = await repo.load()

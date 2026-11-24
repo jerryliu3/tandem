@@ -63,7 +63,7 @@ export function InsightList({ insights, limit, clamp, empty = 'Nothing needs att
           <li key={i.id}>
             <button
               type="button"
-              onClick={() => i.page && setPage(i.page)}
+              onClick={() => i.section && setPage('setup', i.section)}
               className="group flex w-full items-start gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-surface-2"
             >
               <span className={cn('mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg', S.cls)}>
@@ -75,7 +75,7 @@ export function InsightList({ insights, limit, clamp, empty = 'Nothing needs att
                   {i.detail}
                 </span>
               </span>
-              {i.page && <ArrowUpRight size={14} className="mt-1 shrink-0 text-faint opacity-0 transition-opacity group-hover:opacity-100" />}
+              {i.section && <ArrowUpRight size={14} className="mt-1 shrink-0 text-faint opacity-0 transition-opacity group-hover:opacity-100" />}
             </button>
           </li>
         )

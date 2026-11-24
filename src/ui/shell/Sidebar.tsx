@@ -8,11 +8,11 @@ import { LogoMark } from './Logo'
 import { NAV } from './nav'
 
 function GoalPill() {
-  const { goal } = useGoal()
+  const goal = useGoal()
   const setPage = useUiStore((s) => s.setPage)
   const pct = goal.onTrackPct * 100
   return (
-    <button type="button" onClick={() => setPage('goal')} className="glass w-full rounded-2xl p-3.5 text-left transition-transform hover:-translate-y-0.5">
+    <button type="button" onClick={() => setPage('setup', 'goal')} className="glass w-full rounded-2xl p-3.5 text-left transition-transform hover:-translate-y-0.5">
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted">Retirement goal</span>
         <span className={cn('num font-semibold', pct >= 100 ? 'text-positive' : 'text-ink')}>{formatPct(Math.min(pct, 999), 0)}</span>
@@ -64,7 +64,7 @@ export function Sidebar() {
       <div className="mt-auto space-y-3">
         <GoalPill />
         <p className="px-2 text-[11px] leading-relaxed text-faint">
-          Saved in this browser. Export a backup from Settings.
+          Saved in this browser. Export a backup from Setup.
           <br />
           Planning estimates, not tax advice.
         </p>

@@ -4,27 +4,19 @@ import { useEffect, type ReactNode } from 'react'
 import type { PageId } from './model/types'
 import { flushSave, redo, undo, usePlanStore } from './store/planStore'
 import { LocalStorageRepository } from './store/repository'
-import { pageFromHash, useUiStore } from './store/uiStore'
-import { AccountsPage } from './ui/pages/AccountsPage'
-import { BudgetPage } from './ui/pages/BudgetPage'
-import { GoalPage } from './ui/pages/GoalPage'
-import { IncomePage } from './ui/pages/IncomePage'
-import { OverviewPage } from './ui/pages/OverviewPage'
-import { PropertyPage } from './ui/pages/PropertyPage'
-import { SettingsPage } from './ui/pages/SettingsPage'
+import { routeFromHash, useUiStore } from './store/uiStore'
+import { HomePage } from './ui/pages/HomePage'
+import { MonthsPage } from './ui/pages/MonthsPage'
+import { SetupPage } from './ui/pages/SetupPage'
 import { Sidebar } from './ui/shell/Sidebar'
 import { TopBar } from './ui/shell/TopBar'
 
 const repository = new LocalStorageRepository()
 
 const PAGES: Record<PageId, () => ReactNode> = {
-  overview: OverviewPage,
-  income: IncomePage,
-  budget: BudgetPage,
-  accounts: AccountsPage,
-  property: PropertyPage,
-  goal: GoalPage,
-  settings: SettingsPage,
+  home: HomePage,
+  months: MonthsPage,
+  setup: SetupPage,
 }
 
 function isTyping(target: EventTarget | null): boolean {
@@ -41,7 +33,7 @@ export default function App() {
 
   useEffect(() => {
     void usePlanStore.getState().hydrate(repository)
-    const onHash = () => useUiStore.setState({ page: pageFromHash(location.hash) })
+    const onHash = () => useUiStore.setState(routeFromHash(location.hash))
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z' || isTyping(e.target)) return
       e.preventDefault()
@@ -64,7 +56,7 @@ export default function App() {
   }, [theme])
 
   useEffect(() => {
-    window.scrollTo({ top: 0 })
+    if (!useUiStore.getState().section) window.scrollTo({ top: 0 })
   }, [page])
 
   if (!hydrated) return null
