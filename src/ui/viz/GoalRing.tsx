@@ -16,7 +16,7 @@ export function GoalRing({ pct, size = 168, stroke = 12, children }: { pct: numb
             <stop offset="1" style={{ stopColor: 'var(--accent-2)' }} />
           </linearGradient>
         </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track)" strokeWidth={stroke} />
         <motion.circle
           cx={size / 2}
           cy={size / 2}

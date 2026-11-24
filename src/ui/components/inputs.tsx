@@ -302,7 +302,7 @@ export function SliderField({
         onValueChange={([v]) => onChange(v)}
         className="relative flex h-5 w-full touch-none items-center select-none"
       >
-        <Slider.Track className="relative h-1.5 grow overflow-hidden rounded-full bg-surface-2">
+        <Slider.Track className="relative h-1.5 grow overflow-hidden rounded-full bg-track">
           <Slider.Range className="bg-accent-gradient absolute h-full rounded-full" />
         </Slider.Track>
         <Slider.Thumb
@@ -367,7 +367,7 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
       checked={checked}
       onCheckedChange={onChange}
       aria-label={label}
-      className="relative h-[22px] w-10 shrink-0 rounded-full border border-line bg-surface-2 transition-colors data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)]"
+      className="relative h-[22px] w-10 shrink-0 rounded-full border border-line bg-track transition-colors data-[state=checked]:border-transparent data-[state=checked]:bg-[var(--accent)]"
     >
       <SwitchPrimitive.Thumb className="block size-4 translate-x-[3px] rounded-full bg-white shadow transition-transform duration-200 data-[state=checked]:translate-x-[19px]" />
     </SwitchPrimitive.Root>

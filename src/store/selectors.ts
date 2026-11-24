@@ -65,15 +65,15 @@ export interface GoalView {
   whatIfActive: boolean
 }
 
+/** The goal under the saved plan, ignoring what-ifs (for "plan vs what-if" comparisons). */
+export const selectBaseGoal = memo((plan: Plan): GoalResult => solveGoal(plan, selectProjection(plan)))
+
 export const selectGoal = memo((plan: Plan, w: GoalWhatIf): GoalView => {
   const active = isWhatIfActive(w)
   const { plan: eff, opts } = applyWhatIf(plan, w)
   const projection = active ? projectPlan(eff, opts) : selectProjection(plan)
-  return { plan: eff, opts, projection, goal: solveGoal(eff, projection, opts), whatIfActive: active }
+  return { plan: eff, opts, projection, goal: active ? solveGoal(eff, projection, opts) : selectBaseGoal(plan), whatIfActive: active }
 })
-
-/** The goal under the saved plan, ignoring what-ifs (for "plan vs what-if" comparisons). */
-export const selectBaseGoal = memo((plan: Plan): GoalResult => solveGoal(plan, selectProjection(plan)))
 
 export const selectMonteCarlo = memo((plan: Plan, w: GoalWhatIf): MonteCarloResult => {
   const view = selectGoal(plan, w)

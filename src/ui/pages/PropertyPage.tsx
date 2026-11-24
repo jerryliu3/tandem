@@ -311,7 +311,7 @@ function PropertyView({ p }: { p: RentalProperty }) {
           format={(v) => cad(v, { sign: v > 0 })}
           tone={cashMonthlyCad >= 0 ? 'positive' : 'negative'}
           sub={`${usd(rr.cashFlowMonthlyUsd)} · after all taxes`}
-          explain={{ title: 'Monthly cash flow (CAD)', lines: cashLines, note: 'A shortfall is covered from take-home pay before savings.' }}
+          explain={{ title: 'Monthly cash flow (CAD)', lines: cashLines, note: 'A shortfall comes out of the owner’s monthly savings; a surplus adds to them.' }}
         />
       </Card>
 

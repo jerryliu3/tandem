@@ -14,11 +14,14 @@
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-warning: var(--warning);
+  --color-track: var(--track);
 }
 
 :root,
 [data-theme="midnight"] {
   color-scheme: dark;
+  /* Unfilled bars, rails and toggles; themes override when surface-2 is too close to the page. */
+  --track: var(--surface-2);
   --bg: #070b18;
   --bg-glow-1: rgb(99 102 241 / 0.3);
   --bg-glow-2: rgb(20 184 166 / 0.16);
@@ -112,6 +115,7 @@
   --bg-glow-3: rgb(94 234 212 / 0.3);
   --surface: rgb(255 255 255 / 0.66);
   --surface-2: rgb(255 255 255 / 0.92);
+  --track: rgb(30 27 75 / 0.09);
   --border: rgb(30 27 75 / 0.08);
   --text: #15183a;
   --muted: #5a6086;

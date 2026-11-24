@@ -141,7 +141,7 @@ function PaycheckCard({ result, period, onPeriod }: { result: PersonResult; peri
           <div className="num mt-1 text-xl font-medium">{money(total / div)}</div>
         </div>
       </div>
-      <div className="mt-5 flex h-3.5 w-full overflow-hidden rounded-full bg-surface-2">
+      <div className="mt-5 flex h-3.5 w-full overflow-hidden rounded-full bg-track">
         {slices.map((s) => (
           <motion.div
             key={s.key}
@@ -392,7 +392,7 @@ function CompareView({ period }: { period: Period }) {
             return (
               <div key={p.id} className="flex items-center gap-3">
                 <span className="w-16 shrink-0 text-sm text-muted">{plan.people.find((x) => x.id === p.id)!.name}</span>
-                <div className="flex h-3 overflow-hidden rounded-full bg-surface-2" style={{ width: `${(p.cashComp / maxGross) * 100}%` }}>
+                <div className="flex h-3 overflow-hidden rounded-full bg-track" style={{ width: `${(p.cashComp / maxGross) * 100}%` }}>
                   {slices.map((sl) => (
                     <div key={sl.key} title={`${sl.label}: ${money(sl.value / div)}`} style={{ width: `${(sl.value / p.cashComp) * 100}%`, background: sl.color }} />
                   ))}

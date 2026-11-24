@@ -33,7 +33,7 @@ export function ProgressBar({
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0
   const bg = tone === 'accent' ? 'bg-accent-gradient' : tone === 'positive' ? 'bg-positive' : tone === 'negative' ? 'bg-negative' : 'bg-warning'
   return (
-    <div className={cn('w-full overflow-hidden rounded-full bg-surface-2', height, className)}>
+    <div className={cn('w-full overflow-hidden rounded-full bg-track', height, className)}>
       <motion.div className={cn('h-full rounded-full', bg)} initial={false} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} />
     </div>
   )

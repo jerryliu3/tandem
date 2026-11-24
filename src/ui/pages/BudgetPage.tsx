@@ -32,7 +32,7 @@ function BudgetBar({ b }: { b: BudgetResult }) {
   ]
   return (
     <div>
-      <div className="relative flex h-4 w-full overflow-hidden rounded-full bg-surface-2">
+      <div className="relative flex h-4 w-full overflow-hidden rounded-full bg-track">
         {segs.slice(0, over ? 3 : 4).map((s) => (
           <motion.div key={s.key} className="h-full" style={{ background: s.color }} initial={false} animate={{ width: `${(s.value / total) * 100}%` }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} />
         ))}
