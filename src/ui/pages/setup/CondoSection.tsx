@@ -1,19 +1,16 @@
-import { motion } from 'motion/react'
 import { Building2, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { PersonId, Plan, RentalProperty } from '../../model/types'
-import { propertyTimeline, rentalExpenses } from '../../engine/rental'
-import type { PlanResult, RentalResult } from '../../engine/plan'
-import { usePlanStore } from '../../store/planStore'
-import { usePlan, usePlanResult } from '../../store/selectors'
-import { Card, Metric, StatRow } from '../components/Card'
-import { AXIS_PROPS, ChartTooltip, GRID_PROPS } from '../components/charts'
-import { Badge, EmptyState } from '../components/feedback'
-import { Button, EditableText, Field, MoneyField, NumberField, Segmented, SelectMenu, Switch } from '../components/inputs'
-import { ConfirmDialog, type ExplainLine } from '../components/overlays'
-import { cn } from '../cn'
-import { formatCurrency, formatPct } from '../format'
+import type { PersonId, Plan, RentalProperty } from '../../../model/types'
+import { rentalExpenses } from '../../../engine/rental'
+import type { PlanResult, RentalResult } from '../../../engine/plan'
+import { usePlanStore } from '../../../store/planStore'
+import { usePlan, usePlanResult } from '../../../store/selectors'
+import { Card, StatRow } from '../../components/Card'
+import { Badge, EmptyState } from '../../components/feedback'
+import { Button, EditableText, Field, MoneyField, NumberField, Segmented, SelectMenu, Switch } from '../../components/inputs'
+import { ConfirmDialog } from '../../components/overlays'
+import { cn } from '../../cn'
+import { formatCurrency, formatPct } from '../../format'
 
 const cad = (v: number, o: { sign?: boolean; compact?: boolean } = {}) => formatCurrency(v, 'CAD', o)
 const usd = (v: number, o: { sign?: boolean; compact?: boolean } = {}) => formatCurrency(v, 'USD', o)
@@ -45,52 +42,6 @@ function buildSteps(p: RentalProperty, rr: RentalResult, r: PlanResult, fx: numb
   return steps.filter((s) => Math.abs(s.value) >= 0.5 || s.kind === 'in')
 }
 
-function Waterfall({ steps }: { steps: Step[] }) {
-  const rows: (Step & { from: number; to: number })[] = []
-  let run = 0
-  for (const s of steps) {
-    rows.push({ ...s, from: run, to: run + s.value })
-    run += s.value
-  }
-  rows.push({ label: 'Net cash flow', value: run, kind: 'total', from: 0, to: run })
-  const points = rows.flatMap((x) => [x.from, x.to])
-  const lo = Math.min(0, ...points)
-  const hi = Math.max(0, ...points)
-  const span = hi - lo || 1
-  const color = (s: (typeof rows)[number]) =>
-    s.kind === 'in' ? 'var(--positive)' : s.kind === 'equity' ? 'var(--accent)' : s.kind === 'total' ? (s.value >= 0 ? 'var(--positive)' : 'var(--negative)') : 'var(--negative)'
-
-  return (
-    <div className="space-y-1">
-      {rows.map((s, i) => {
-        const left = ((Math.min(s.from, s.to) - lo) / span) * 100
-        const width = Math.max(0.4, (Math.abs(s.to - s.from) / span) * 100)
-        return (
-          <div key={s.label} className={cn('grid grid-cols-[150px_minmax(0,1fr)_96px] items-center gap-3 py-1', s.kind === 'total' && 'mt-1 border-t border-line pt-2.5')}>
-            <div className="min-w-0">
-              <div className={cn('truncate text-sm', s.kind === 'total' ? 'font-medium text-ink' : 'text-muted')}>{s.label}</div>
-              {s.hint && <div className="truncate text-[11px] text-faint">{s.hint}</div>}
-            </div>
-            <div className="relative h-5 rounded-md bg-surface/60">
-              <div className="absolute inset-y-0 w-px bg-line" style={{ left: `${((0 - lo) / span) * 100}%` }} />
-              <motion.div
-                className="absolute inset-y-0.5 rounded-[5px]"
-                style={{ background: color(s), opacity: s.kind === 'total' ? 1 : 0.85 }}
-                initial={false}
-                animate={{ left: `${left}%`, width: `${width}%` }}
-                transition={{ type: 'spring', stiffness: 260, damping: 30, delay: i * 0.015 }}
-              />
-            </div>
-            <div className={cn('num text-right text-sm', s.kind === 'total' ? (s.value >= 0 ? 'font-semibold text-positive' : 'font-semibold text-negative') : 'text-muted')}>
-              {cad(s.value, { sign: s.kind !== 'total' || s.value > 0 })}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 function CanadaTaxCard({ p, rr, onToggle }: { p: RentalProperty; rr: RentalResult; onToggle: (v: boolean) => void }) {
   const saving = rr.canadaTaxIfNoNr6 - rr.canadaTaxWithNr6
   const tile = (active: boolean, title: string, sub: string, amount: number) => (
@@ -119,86 +70,6 @@ function CanadaTaxCard({ p, rr, onToggle }: { p: RentalProperty; rr: RentalResul
         <li>File form NR6 before January 1 (or the first rent payment) so your agent withholds on net rent, then file a Section 216 return by June 30.</li>
         <li>Canadian tax paid is credited against the US tax on the same income (foreign tax credit).</li>
       </ul>
-    </Card>
-  )
-}
-
-function ScheduleECard({ p, rr, r, fx }: { p: RentalProperty; rr: RentalResult; r: PlanResult; fx: number }) {
-  const owner = r.people[p.ownerId]
-  const b = rentalExpenses(p, r.inflationFactor)
-  const net = rr.scheduleENetUsd
-  return (
-    <Card title="US tax (Schedule E)" subtitle={`Reported in USD by ${p.ownerId === 'jerry' ? 'Jerry' : 'Sophia'}`}>
-      <StatRow label="Rent" value={usd(b.grossRent / fx)} />
-      <StatRow label="Operating expenses" value={usd(-b.total / fx)} />
-      <StatRow label="Mortgage interest" value={usd(-rr.interest / fx)} />
-      <StatRow label="Depreciation" hint="30-yr straight line" value={usd(-rr.depreciationUsd)} />
-      <StatRow strong label={net < 0 ? 'Rental loss' : 'Rental income'} value={usd(net)} />
-      {net < 0 && (
-        <div className="mt-2 rounded-xl bg-surface/60 p-3 text-xs">
-          <div className="flex justify-between text-muted">
-            <span>Deductible this year</span>
-            <span className="num text-ink">{usd(owner.passive.allowed)}</span>
-          </div>
-          <div className="mt-1 flex justify-between text-muted">
-            <span>Carried forward</span>
-            <span className="num text-ink">{usd(owner.passive.suspended)}</span>
-          </div>
-          <p className="mt-2 leading-relaxed text-faint">Up to $25k of rental losses offset wages, phasing out between $100k and $150k of income. The rest carries forward to future rental income or a sale.</p>
-        </div>
-      )}
-      <StatRow strong label={rr.rentalTaxUsd < 0 ? 'Federal + NY + NYC tax saved' : 'Federal + NY + NYC tax'} value={usd(Math.abs(rr.rentalTaxUsd))} tone={rr.rentalTaxUsd < 0 ? 'positive' : 'negative'} />
-    </Card>
-  )
-}
-
-function EquityChart({ p, startYear }: { p: RentalProperty; startYear: number }) {
-  const horizon = 30
-  const tl = propertyTimeline(p, startYear, horizon)
-  const payoff = tl.find((x) => x.balance <= 0.5)
-  const share = p.ownershipPct / 100
-  const data = tl.map((x) => ({ year: x.year, value: x.value * share, balance: x.balance * share, equity: x.equity }))
-  return (
-    <Card
-      title="Value, mortgage & equity"
-      subtitle={payoff ? `Mortgage paid off in ${payoff.year}` : `Mortgage still ${cad(tl[tl.length - 1].balance, { compact: true })} after ${horizon} years`}
-      action={
-        <div className="flex gap-3 text-xs text-muted">
-          {[
-            ['Equity', 'var(--accent)'],
-            ['Mortgage', 'var(--negative)'],
-            ['Value', 'var(--muted)'],
-          ].map(([label, color]) => (
-            <span key={label} className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full" style={{ background: color }} />
-              {label}
-            </span>
-          ))}
-        </div>
-      }
-    >
-      <ResponsiveContainer width="100%" height={250}>
-        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id="eq-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.45} />
-              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.02} />
-            </linearGradient>
-            <linearGradient id="mort-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--negative)" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="var(--negative)" stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid {...GRID_PROPS} />
-          <XAxis dataKey="year" {...AXIS_PROPS} interval="preserveStartEnd" minTickGap={30} />
-          <YAxis {...AXIS_PROPS} width={56} tickFormatter={(v: number) => cad(v, { compact: true })} />
-          <Tooltip content={(props) => <ChartTooltip {...props} format={(v) => cad(v)} />} />
-          {payoff && <ReferenceLine x={payoff.year} stroke="var(--positive)" strokeDasharray="4 4" />}
-          <Area type="monotone" dataKey="balance" name="Mortgage" stroke="var(--negative)" strokeWidth={1.5} fill="url(#mort-fill)" />
-          <Area type="monotone" dataKey="equity" name="Equity" stroke="var(--accent)" strokeWidth={2} fill="url(#eq-fill)" />
-          <Line type="monotone" dataKey="value" name="Value" stroke="var(--muted)" strokeDasharray="3 3" dot={false} strokeWidth={1.5} />
-        </AreaChart>
-      </ResponsiveContainer>
     </Card>
   )
 }
@@ -281,65 +152,22 @@ function PropertyView({ p }: { p: RentalProperty }) {
       const x = d.properties.find((q) => q.id === p.id)
       if (x) fn(x)
     })
-  const share = p.ownershipPct / 100
   const steps = buildSteps(p, rr, r, fx)
   const cashMonthlyCad = rr.cashFlowMonthlyUsd * fx
-  const tl = propertyTimeline(p, r.year, 40)
-  const payoff = tl.find((x) => x.balance <= 0.5)
-  const equity = (p.marketValue - p.mortgage.balance) * share
-  const economicMonthly = cashMonthlyCad + rr.principal / 12 + ((p.marketValue * share * p.appreciationPct) / 100) / 12
-  const cashLines: ExplainLine[] = [
-    ...steps.map((s) => ({ label: s.label, value: cad(s.value, { sign: true }), kind: s.value >= 0 ? ('add' as const) : ('sub' as const) })),
-    { label: 'Net cash flow', value: cad(cashMonthlyCad), kind: 'total' },
-  ]
 
   return (
     <div className="grid grid-cols-12 gap-5">
-      <Card className="col-span-6 xl:col-span-3">
-        <Metric label="Market value" value={p.marketValue * share} format={(v) => cad(v)} sub={`≈ ${usd((p.marketValue * share) / fx)} · ${formatPct(p.appreciationPct, 1)}/yr growth`} />
-      </Card>
-      <Card className="col-span-6 xl:col-span-3">
-        <Metric label="Mortgage" value={p.mortgage.balance * share} format={(v) => cad(v)} tone="negative" sub={payoff ? `Paid off in ${payoff.year}` : 'Payment doesn’t cover interest'} />
-      </Card>
-      <Card className="col-span-6 xl:col-span-3">
-        <Metric label="Equity" value={equity} format={(v) => cad(v)} tone="accent" sub={`+${cad(rr.principal)} principal this year`} />
-      </Card>
-      <Card className="col-span-6 xl:col-span-3">
-        <Metric
-          label="Monthly cash flow"
-          value={cashMonthlyCad}
-          format={(v) => cad(v, { sign: v > 0 })}
-          tone={cashMonthlyCad >= 0 ? 'positive' : 'negative'}
-          sub={`${usd(rr.cashFlowMonthlyUsd)} · after all taxes`}
-          explain={{ title: 'Monthly cash flow (CAD)', lines: cashLines, note: 'A shortfall comes out of the owner’s monthly savings; a surplus adds to them.' }}
-        />
-      </Card>
-
-      <Card
-        className="col-span-12 xl:col-span-7"
-        title="Where the rent goes"
-        subtitle="Per month, your share"
-        action={
-          <Badge tone={economicMonthly >= 0 ? 'positive' : 'warning'}>
-            {economicMonthly >= 0 ? 'Builds wealth' : 'Costs'} {cad(Math.abs(economicMonthly))}/mo incl. equity
-          </Badge>
-        }
-      >
-        <Waterfall steps={steps} />
+      <div className="col-span-12">
+        <DetailsCard p={p} plan={plan} edit={edit} />
+      </div>
+      <Card className="col-span-12 xl:col-span-7" title="Monthly cash flow" subtitle="Your share, in CAD">
+        {steps.map((s) => (
+          <StatRow key={s.label} label={s.label} hint={s.hint} value={cad(s.value, { sign: true })} tone="muted" />
+        ))}
+        <StatRow label="Net cash flow" hint={usd(rr.cashFlowMonthlyUsd)} value={cad(cashMonthlyCad)} tone={cashMonthlyCad >= 0 ? 'positive' : 'negative'} strong />
       </Card>
       <div className="col-span-12 xl:col-span-5">
         <CanadaTaxCard p={p} rr={rr} onToggle={(v) => edit((x) => void (x.canada.nr6Elected = v))} />
-      </div>
-
-      <div className="col-span-12 xl:col-span-7">
-        <EquityChart p={p} startYear={r.year} />
-      </div>
-      <div className="col-span-12 xl:col-span-5">
-        <ScheduleECard p={p} rr={rr} r={r} fx={fx} />
-      </div>
-
-      <div className="col-span-12">
-        <DetailsCard p={p} plan={plan} edit={edit} />
       </div>
     </div>
   )
@@ -367,7 +195,7 @@ function blankProperty(owner: PersonId, year: number): RentalProperty {
   }
 }
 
-export function PropertyPage() {
+export function CondoSection() {
   const plan = usePlan()
   const update = usePlanStore((s) => s.update)
   const [selected, setSelected] = useState(plan.properties[0]?.id ?? '')

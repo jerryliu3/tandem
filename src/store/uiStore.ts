@@ -1,46 +1,39 @@
 import { create } from 'zustand'
-import type { PageId, Scope } from '../model/types'
+import type { PageId, Scope, SetupSection } from '../model/types'
 
-export const PAGES: PageId[] = ['overview', 'income', 'budget', 'accounts', 'property', 'goal', 'settings']
+export const PAGES: PageId[] = ['home', 'months', 'setup']
+export const SECTIONS: SetupSection[] = ['pay', 'budget', 'accounts', 'condo', 'goal', 'assumptions']
 
-/** Temporary Goal-page overrides; never saved until applied. */
-export interface GoalWhatIf {
-  savingsRatePct: number | null
-  returnShiftPct: number
-  targetYear: number | null
-  targetAmount: number | null
-}
-
-export const EMPTY_WHAT_IF: GoalWhatIf = { savingsRatePct: null, returnShiftPct: 0, targetYear: null, targetAmount: null }
-
-export interface UiState {
-  scope: Scope
+export interface Route {
   page: PageId
-  whatIf: GoalWhatIf
-  setScope: (scope: Scope) => void
-  setPage: (page: PageId) => void
-  setWhatIf: (patch: Partial<GoalWhatIf>) => void
-  resetWhatIf: () => void
+  section: SetupSection | null
 }
 
-export function pageFromHash(hash: string): PageId {
-  const id = hash.replace(/^#\/?/, '') as PageId
-  return PAGES.includes(id) ? id : 'overview'
+export interface UiState extends Route {
+  scope: Scope
+  balancesOpen: boolean
+  setBalancesOpen: (open: boolean) => void
+  setScope: (scope: Scope) => void
+  setPage: (page: PageId, section?: SetupSection | null) => void
 }
+
+export function routeFromHash(hash: string): Route {
+  const [id, sub] = hash.replace(/^#\/?/, '').split('/') as [PageId, SetupSection | undefined]
+  const page = PAGES.includes(id) ? id : 'home'
+  return { page, section: page === 'setup' && sub && SECTIONS.includes(sub) ? sub : null }
+}
+
+const initial = typeof location === 'undefined' ? { page: 'home' as const, section: null } : routeFromHash(location.hash)
 
 export const useUiStore = create<UiState>()((set) => ({
   scope: 'household',
-  page: typeof location === 'undefined' ? 'overview' : pageFromHash(location.hash),
-  whatIf: EMPTY_WHAT_IF,
+  balancesOpen: false,
+  ...initial,
+  setBalancesOpen: (balancesOpen) => set({ balancesOpen }),
   setScope: (scope) => set({ scope }),
-  setPage: (page) => {
-    set({ page })
-    if (typeof location !== 'undefined' && pageFromHash(location.hash) !== page) location.hash = `/${page}`
+  setPage: (page, section = null) => {
+    set({ page, section })
+    const hash = `#/${page}${section ? `/${section}` : ''}`
+    if (typeof location !== 'undefined' && location.hash !== hash) location.hash = hash
   },
-  setWhatIf: (patch) => set((s) => ({ whatIf: { ...s.whatIf, ...patch } })),
-  resetWhatIf: () => set({ whatIf: EMPTY_WHAT_IF }),
 }))
-
-export function isWhatIfActive(w: GoalWhatIf): boolean {
-  return w.savingsRatePct !== null || w.returnShiftPct !== 0 || w.targetYear !== null || w.targetAmount !== null
-}

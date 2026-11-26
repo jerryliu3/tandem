@@ -76,7 +76,7 @@ export function createDefaultPlan(): Plan {
   ])
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     settings: { planYear: 2027, displayCurrency: 'USD', fxCadPerUsd: 1.4, theme: 'midnight' },
     people: [jerry, sophia],
     shared: {
@@ -149,5 +149,6 @@ export function createDefaultPlan(): Plan {
       'goal',
       'accounts.balances',
     ],
+    actuals: { months: {}, snapshots: [], baseline: null, bankLinks: {} },
   }
 }

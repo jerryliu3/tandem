@@ -4,7 +4,8 @@ export type PersonId = 'jerry' | 'sophia'
 export type Scope = PersonId | 'household'
 export type ThemeId = 'midnight' | 'aurora' | 'dusk' | 'daylight'
 export type PlanYear = 2026 | 2027
-export type PageId = 'overview' | 'income' | 'budget' | 'accounts' | 'property' | 'goal' | 'settings'
+export type PageId = 'home' | 'months' | 'setup'
+export type SetupSection = 'pay' | 'budget' | 'accounts' | 'condo' | 'goal' | 'assumptions'
 
 export interface Insight {
   id: string
@@ -12,7 +13,45 @@ export interface Insight {
   title: string
   detail: string
   personId?: PersonId
-  page?: PageId
+  section?: SetupSection
+}
+
+/** 'YYYY-MM' */
+export type MonthKey = string
+
+/** Actual monthly spending in USD; null = went as planned. */
+export interface MonthCheckIn {
+  jerry: number | null
+  sophia: number | null
+  shared: number | null
+}
+
+export interface BalanceSnapshot {
+  id: string
+  /** 'YYYY-MM-DD' */
+  date: string
+  /** Account id → balance in the account's currency. */
+  balances: Record<string, number>
+}
+
+export interface Baseline {
+  createdAt: string
+  startMonth: MonthKey
+  /** Projected invested assets per month; index 0 = startMonth. */
+  invested: Record<Scope, number[]>
+}
+
+/** A SimpleFIN account mapped onto a Tandem account. `accountId` null means "don't sync". */
+export interface BankLink {
+  accountId: string | null
+}
+
+export interface Actuals {
+  months: Record<MonthKey, MonthCheckIn>
+  snapshots: BalanceSnapshot[]
+  baseline: Baseline | null
+  /** SimpleFIN account id → link. Missing id means it has never been chosen. */
+  bankLinks: Record<string, BankLink>
 }
 
 export type CategoryId =
@@ -204,7 +243,7 @@ export interface Settings {
 }
 
 export interface Plan {
-  schemaVersion: 1
+  schemaVersion: 2
   settings: Settings
   people: [Person, Person]
   shared: { expenses: Expense[]; travel: TravelPlan; split: SplitRule }
@@ -215,4 +254,5 @@ export interface Plan {
   goal: RetirementGoal
   /** Field paths still holding placeholder values (e.g. "people.0.birthYear"). */
   placeholders: string[]
+  actuals: Actuals
 }

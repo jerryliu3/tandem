@@ -1,57 +1,20 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Select } from 'radix-ui'
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import type { Currency, Debt, Expense, PersonId, Plan, Scope } from '../../model/types'
-import { CATEGORIES, categoryOf } from '../../model/categories'
-import { travelAnnual, splitWeights, type BudgetResult } from '../../engine/budget'
-import { usePlanStore } from '../../store/planStore'
-import { usePlan, usePlanResult } from '../../store/selectors'
-import { useUiStore } from '../../store/uiStore'
-import { Card, StatRow } from '../components/Card'
-import { CategoryBadge, CategoryIcon } from '../components/CategoryIcon'
-import { ChartTooltip } from '../components/charts'
-import { Badge } from '../components/feedback'
-import { Button, CURRENCY_PREFIX, CurrencyPill, EditableNumber, EditableText, NumberField, MoneyField, Segmented, SliderField } from '../components/inputs'
-import { Explain } from '../components/overlays'
-import { cn } from '../cn'
-import { formatPct, useMoney } from '../format'
-import { scopePeople } from '../data'
+import type { Currency, Debt, Expense, PersonId, Plan, Scope } from '../../../model/types'
+import { CATEGORIES } from '../../../model/categories'
+import { travelAnnual, splitWeights } from '../../../engine/budget'
+import { usePlanStore } from '../../../store/planStore'
+import { usePlan, usePlanResult } from '../../../store/selectors'
+import { Card, StatRow } from '../../components/Card'
+import { CategoryBadge, CategoryIcon } from '../../components/CategoryIcon'
+import { Badge } from '../../components/feedback'
+import { Button, CURRENCY_PREFIX, CurrencyPill, EditableNumber, EditableText, NumberField, MoneyField, Segmented, SliderField } from '../../components/inputs'
+import { Explain } from '../../components/overlays'
+import { formatPct, useMoney } from '../../format'
+import { scopePeople } from '../../data'
 
 const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10))
-
-function BudgetBar({ b }: { b: BudgetResult }) {
-  const { money } = useMoney()
-  const over = b.discretionary < 0
-  const total = Math.max(b.takeHome, b.savings + b.fixed + b.yearlyMonthly)
-  const segs = [
-    { key: 'savings', label: 'Savings', value: b.savings, color: 'var(--positive)' },
-    { key: 'fixed', label: 'Fixed bills', value: b.fixed, color: 'var(--chart-4)' },
-    { key: 'yearly', label: 'Yearly ÷ 12', value: b.yearlyMonthly, color: 'var(--chart-7)' },
-    { key: 'free', label: over ? 'Over budget' : 'Free to spend', value: Math.abs(b.discretionary), color: over ? 'var(--negative)' : 'var(--chart-3)' },
-  ]
-  return (
-    <div>
-      <div className="relative flex h-4 w-full overflow-hidden rounded-full bg-track">
-        {segs.slice(0, over ? 3 : 4).map((s) => (
-          <motion.div key={s.key} className="h-full" style={{ background: s.color }} initial={false} animate={{ width: `${(s.value / total) * 100}%` }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} />
-        ))}
-        {over && <div className="absolute inset-y-0 border-l-2 border-dashed border-ink/70" style={{ left: `${(b.takeHome / total) * 100}%` }} title="Take-home" />}
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-        {segs.map((s) => (
-          <div key={s.key}>
-            <div className="flex items-center gap-1.5 text-xs text-muted">
-              <span className="size-2 rounded-full" style={{ background: s.color }} />
-              {s.label}
-            </div>
-            <div className={cn('num mt-1 text-xl font-semibold', s.key === 'free' && over && 'text-negative')}>{money(s.key === 'free' ? b.discretionary : s.value)}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 function CategoryPicker({ value, onChange }: { value: Expense['category']; onChange: (v: Expense['category']) => void }) {
   return (
@@ -220,51 +183,6 @@ function DebtsCard({ owners }: { owners: PersonId[] }) {
   )
 }
 
-function CategoryDonut({ scope }: { scope: Scope }) {
-  const r = usePlanResult()
-  const { money } = useMoney()
-  const byCat = new Map<string, number>()
-  for (const l of r.budgets[scope].lines) byCat.set(l.category, (byCat.get(l.category) ?? 0) + l.monthlyUsd)
-  const data = [...byCat.entries()]
-    .filter(([, v]) => v > 0.5)
-    .sort((a, b) => b[1] - a[1])
-    .map(([id, v]) => ({ id, name: categoryOf(id as Expense['category']).label, value: v, color: categoryOf(id as Expense['category']).color }))
-  const total = data.reduce((s, d) => s + d.value, 0)
-  return (
-    <Card title="Spending by category" subtitle="Monthly, including yearly costs ÷ 12">
-      <div className="flex items-center gap-5">
-        <div className="relative size-40 shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={data} dataKey="value" nameKey="name" innerRadius="68%" outerRadius="100%" paddingAngle={2} stroke="none" cornerRadius={4} isAnimationActive animationDuration={600}>
-                {data.map((d) => (
-                  <Cell key={d.id} fill={d.color} />
-                ))}
-              </Pie>
-              <Tooltip content={(p) => <ChartTooltip {...p} format={(v) => `${money(v)}/mo`} />} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <div className="num text-lg font-semibold">{money(total)}</div>
-            <div className="text-[11px] text-faint">per month</div>
-          </div>
-        </div>
-        <ul className="min-w-0 flex-1 space-y-1.5">
-          {data.slice(0, 7).map((d) => (
-            <li key={d.id} className="flex items-center justify-between gap-2 text-sm">
-              <span className="flex min-w-0 items-center gap-2 text-muted">
-                <CategoryIcon id={d.id as Expense['category']} size={13} />
-                <span className="truncate">{d.name}</span>
-              </span>
-              <span className="num shrink-0 text-ink">{formatPct((d.value / total) * 100, 0)}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Card>
-  )
-}
-
 function SplitCard() {
   const plan = usePlan()
   const r = usePlanResult()
@@ -373,48 +291,24 @@ function SavingsRates({ scope }: { scope: Scope }) {
   )
 }
 
-export function BudgetPage() {
+export function BudgetSection() {
   const plan = usePlan()
   const r = usePlanResult()
-  const scope = useUiStore((s) => s.scope)
   const { money } = useMoney()
-  const b = r.budgets[scope]
-  const people = scopePeople(scope)
-  const w = splitWeights(plan.shared.split, r.people.jerry.takeHomeMonthly, r.people.sophia.takeHomeMonthly)
-
+  const b = r.budgets.household
   return (
     <div className="grid grid-cols-12 gap-5">
-      <Card className="col-span-12" bodyClassName="p-6">
-        <div className="grid grid-cols-12 items-center gap-8">
-          <div className="col-span-12 lg:col-span-8">
-            <div className="mb-4 flex items-baseline justify-between">
-              <div>
-                <div className="text-[13px] text-muted">Monthly take-home{scope === 'household' ? ' · together' : ''}</div>
-                <div className="num mt-1 text-3xl font-semibold tracking-tight">{money(b.takeHome)}</div>
-              </div>
-              {b.discretionary < 0 ? (
-                <Badge tone="negative">{money(-b.discretionary)}/mo over</Badge>
-              ) : (
-                <Badge tone="positive">{money(b.discretionary)}/mo to spare</Badge>
-              )}
-            </div>
-            <BudgetBar b={b} />
-          </div>
-          <div className="col-span-12 lg:col-span-4">
-            <SavingsRates scope={scope} />
-          </div>
-        </div>
-      </Card>
-
       <div className="col-span-12 space-y-5 xl:col-span-7">
-        {people.map((id) => (
-          <ExpenseList key={id} target={id} title={`${plan.people.find((p) => p.id === id)!.name}'s expenses`} subtitle="Personal costs, paid from their own take-home" />
+        {plan.people.map((p) => (
+          <ExpenseList key={p.id} target={p.id} title={`${p.name}'s expenses`} subtitle="Personal costs, paid from their own take-home" />
         ))}
-        <ExpenseList target="shared" title="Shared expenses" subtitle={scope === 'household' ? 'Split between you' : `Split ${formatPct(w[scope as PersonId] * 100, 0)} to you`} share={scope === 'household' ? undefined : w[scope as PersonId]} />
-        <DebtsCard owners={people} />
+        <ExpenseList target="shared" title="Shared expenses" subtitle="Split between you" />
+        <DebtsCard owners={['jerry', 'sophia']} />
       </div>
       <div className="col-span-12 space-y-5 xl:col-span-5">
-        <CategoryDonut scope={scope} />
+        <Card title="Savings rate" subtitle="Saved first from each take-home">
+          <SavingsRates scope="household" />
+        </Card>
         <SplitCard />
         <TravelCard />
         <Card title="Monthly summary">

@@ -28,7 +28,7 @@ export function TopBar() {
           <p className="text-[13px] text-muted">{item.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className={cn('transition-opacity', item.scopeless && 'pointer-events-none opacity-35')} title={item.scopeless ? 'This page covers the whole household' : undefined}>
+          {page === 'home' && (
             <Segmented<Scope>
               value={scope}
               onChange={setScope}
@@ -38,7 +38,7 @@ export function TopBar() {
                 { value: 'household', label: 'Together' },
               ]}
             />
-          </div>
+          )}
           <Segmented<PlanYear>
             value={settings.planYear}
             onChange={(y) => update((d) => void (d.settings.planYear = y))}
