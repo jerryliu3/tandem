@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --f-inter: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --f-barlow: "Barlow Semi Condensed", "Inter Variable", sans-serif;
+  --f-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --f-figtree: "Figtree", "Inter Variable", system-ui, sans-serif;
+  --f-shoulders: "Big Shoulders Display", "Oswald", Impact, "Arial Narrow", sans-serif;
+  --f-bricolage: "Bricolage Grotesque", "Inter Variable", system-ui, sans-serif;
+  --f-nunito: "Nunito", "Inter Variable", system-ui, sans-serif;
+  --f-outfit: "Outfit", "Inter Variable", system-ui, sans-serif;
+  --f-geist: "Geist", "Inter Variable", system-ui, sans-serif;
+  --f-fraunces: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --f-jakarta: "Plus Jakarta Sans", "Inter Variable", system-ui, sans-serif;
+  --f-instrumentsans: "Instrument Sans", "Inter Variable", system-ui, sans-serif;
+  --f-splinemono: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  font-family: var(--f-inter);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
