@@ -10,6 +10,8 @@ export type Direction = {
   id: string
   name: string
   round: 1 | 2
+  /** Round 1 direction(s) this one is a permutation of. */
+  lineage?: string
   tagline: string
   inspiredBy: string[]
   dna: { label: string; text: string }[]

@@ -1,20 +1,20 @@
 import { motion } from 'motion/react'
 import { Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { broadsheet } from './directions/broadsheet'
+import { baseline } from './directions/baseline'
+import { bloom } from './directions/bloom'
 import { crewClub } from './directions/crew'
-import { instrument } from './directions/instrument'
+import { halo } from './directions/halo'
 import { nightLab } from './directions/nightlab'
 import { softSignal } from './directions/soft'
 import { stadium } from './directions/stadium'
-import { terrain } from './directions/terrain'
 import { EASE, STATIC, type Direction, type Mode } from './kit'
 
-const DIRECTIONS: Direction[] = [nightLab, softSignal, stadium, crewClub, broadsheet, terrain, instrument]
+const DIRECTIONS: Direction[] = [nightLab, softSignal, stadium, crewClub, halo, bloom, baseline]
 
 const ROUNDS: { round: Direction['round']; label: string }[] = [
-  { round: 1, label: 'Round 1 · from fitness references' },
-  { round: 2, label: 'Round 2 · from outside fitness' },
+  { round: 1, label: 'Round 1 · first directions' },
+  { round: 2, label: 'Round 2 · Night Lab & Soft Signal permutations' },
 ]
 
 const params = () => new URLSearchParams(window.location.search)
@@ -82,8 +82,9 @@ export function App() {
         </div>
         <p className="mt-2.5 max-w-[860px]" style={{ fontSize: 15, lineHeight: '23px', color: muted }}>
           Same method as Tandem: pull the visual DNA (canvas, color logic, type, hero element, motion) out of best-in-class references, then design every screen around
-          one hero number. Round 1 borrows from fitness apps. Round 2 deliberately borrows from outside fitness (newspapers, topographic maps, audio hardware) to find
-          looks no health app has yet. Every direction shows the same day, Thanksgiving with Jerry's Turkey Trot 10K PR, and every direction has a light and dark mode.
+          one hero number. Round 2 takes the two favourites further, each with a fresh set of references: Halo puts Night Lab's precision on a 24-hour clock, Bloom
+          opens Soft Signal's orb into petals you can tap, and Baseline sits between them, showing every number against your own normal. Every direction shows the
+          same day, Thanksgiving with Jerry's Turkey Trot 10K PR, in light and dark.
         </p>
 
         <nav className="mt-7 flex flex-wrap gap-x-8 gap-y-4">
@@ -138,6 +139,7 @@ export function App() {
         className="mx-auto mt-9 grid max-w-[1380px] grid-cols-1 gap-10 px-10 lg:grid-cols-[1.25fr_1fr]"
       >
         <div>
+          {d.lineage && <div style={{ ...eyebrow, marginBottom: 8 }}>Permutation of {d.lineage}</div>}
           <h2 style={{ fontSize: 44, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1 }}>{d.name}</h2>
           <p className="mt-3 max-w-[620px]" style={{ fontSize: 18, lineHeight: '27px' }}>{d.tagline}</p>
           <div className="mt-4 flex flex-wrap items-center gap-1.5">
